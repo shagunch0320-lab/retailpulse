@@ -1,0 +1,15 @@
+{
+  "source": "/Users/shagunchaudhary/retailpulse/data/raw/online_retail_II.xlsx",
+  "source_sha256": "bcbe73b35f5b7babf197fb0cb983a11f5d9ff929078d4aa53d171b1f2df2e980",
+  "output": "/Users/shagunchaudhary/retailpulse/data/processed/online_retail_ii.parquet",
+  "rows": 1041671,
+  "distinct_dates": 604,
+  "start_date": "2009-12-01T07:45:00",
+  "end_date": "2011-12-09T12:50:00",
+  "sales_total": 20972968.138,
+  "invoice_count": 40078,
+  "customer_count": 5878,
+  "product_count": 5399,
+  "processed_at": "2026-10-10T14:48:29.060438+00:00",
+  "schema_version": 2
+}

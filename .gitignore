@@ -15,3 +15,9 @@ mlruns/
 models/
 .DS_Store
 *.egg-info/
+
+# Small enough to deploy
+!data/raw/online_retail_II.xlsx
+!data/processed/online_retail_ii.parquet
+!data/processed/online_retail_ii.parquet.manifest.json
+!data/processed/*.joblib
