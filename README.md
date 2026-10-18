@@ -1,5 +1,9 @@
 # RetailPulse
 
+**Live demo:** https://retailpulse-fbssgdrz5zsidqrrmijv8j.streamlit.app
+
+Retail analytics platform covering sales analysis, customer churn prediction (ROC AUC 0.802), demand forecasting and inventory signals. The live demo runs on the Online Retail II dataset (1,041,671 transaction lines); the relational bundle (about 10 million transaction lines) runs locally only, because the transaction file is too large for free hosting.
+
 RetailPulse is a Python and Streamlit foundation for retail sales analytics, customer RFM analysis, demand forecasting, and product demand signals. The app accepts transaction-level CSV and Excel files and maps common Online Retail / Online Retail II headers into one internal schema.
 
 The primary analysis source is the official two-sheet Online Retail II workbook, staged as `data/raw/online_retail_II.xlsx`. It includes invoice-level transactions from both 2009-2010 and 2010-2011, with invoice date, product, quantity, price, customer, and country fields. The loader combines both worksheets and applies the current positive-sales cleaning policy. The dashboard defaults to **Online Retail II (primary)**. The separate Pakistan RetailPulse bundle remains available as **Relational RetailPulse bundle**; it uses `sales_transactions.csv` and six reference tables, with duplicate inventory-flag copies represented once. These datasets have different currencies, schemas, and date ranges and are intentionally analyzed separately. The cleaned RetailPulse CSV is a sample and is not staged or selected as project data.
@@ -14,7 +18,7 @@ python -m pip install -e ".[dev]"
 streamlit run app.py
 ```
 
-The sidebar accepts `.csv`, `.xlsx`, and `.xls`. Required data is an invoice date plus either sales or both quantity and unit price. Customer ID, invoice, description, and country enable additional views. Currency-formatted numeric fields such as `₹ 51` are parsed. Data is not committed; put source files in `data/raw/` and derived exports in `data/processed/`.
+The sidebar accepts `.csv`, `.xlsx`, and `.xls`. Required data is an invoice date plus either sales or both quantity and unit price. Customer ID, invoice, description, and country enable additional views. Currency-formatted numeric fields such as `₹ 51` are parsed. The repo includes only what the live demo needs: the Online Retail II workbook, its Parquet cache and the trained model files. The large relational-bundle files (`sales_transactions.csv`, the DuckDB cache) and the reference tables are not committed; put them in `data/raw/` to run the bundle locally. 
 
 To load Online Retail II, choose **Online Retail II (primary)** and select **Load Online Retail II**. Both official worksheets are combined and normalized. To load the secondary Pakistan dataset, choose **Relational RetailPulse bundle** and select **Load / refresh dataset**. The bundle is `sales_transactions.csv` plus six reference tables in `data/raw/`; its two supplied inventory-flag files are byte-identical copies, so they are represented once. The generic one-file uploader remains available for temporary inspection. Runtime paths are environment-configured. The Pakistan fact CSV is scanned with DuckDB and cached in `RETAILPULSE_CACHE_DIR`, rather than copied into the image or loaded all at once into pandas.
 
@@ -70,6 +74,9 @@ retailpulse-etl --source data/raw/online_retail_II.xlsx --output data/processed/
 
 It validates the normalized rows, writes Parquet atomically, and records a SHA-256 source manifest. The dashboard invokes the same ETL automatically and reuses the Parquet output while the source hash is unchanged. Optional MLflow tracking can be enabled with `pip install -e '.[mlops]'` and `MLFLOW_TRACKING_URI` (optionally `MLFLOW_EXPERIMENT_NAME`); training works without MLflow. Churn input monitoring compares current feature distributions with training snapshots using PSI and flags values at or above 0.25 as high drift.
 
+## Live deployment (Streamlit Community Cloud)
+The demo is deployed from this repository's `main` branch at the link above. The deployed app offers **Online Retail II (primary)** and **Upload one file**; the relational bundle option is hidden automatically when `sales_transactions.csv` is not present. The free tier sleeps when idle, so the first visit may take about 30 seconds to wake the app.
+
 ## Production Deployment
 
 The included Compose deployment keeps the source workbook, transaction file, and reference tables outside the image, mounts them read-only, stores DuckDB in a persistent named volume, runs as a non-root user with a read-only root filesystem, drops Linux capabilities, and binds to localhost by default. Put the Online Retail II workbook and Pakistan bundle files in `data/raw/`, and create an OIDC client with the callback URL `https://YOUR_PUBLIC_HOST/oauth2callback`. Create the ignored local secrets file and fill its placeholders with the provider's real values:
@@ -105,11 +112,11 @@ src/retailpulse/demand_model.py
 src/retailpulse/bundle.py  DuckDB relational bundle loading and aggregates
 src/retailpulse/config.py  Environment-based runtime configuration
 tests/                    Focused data and analytics tests
-data/raw/                 Source datasets (ignored by Git)
-data/processed/           Derived datasets (ignored by Git)
+data/raw/                 Source datasets (only the Online Retail II workbook is committed)
+data/processed/           Derived datasets (only the Parquet cache and trained models are committed)
 notebooks/                Exploration and model development
 ```
 
 ## Remaining External Work
 
-The codebase now includes repeatable ETL, chronological forecast validation, a time-defined churn classifier, optional MLflow tracking, PSI feature monitoring, Docker, Compose, and CI image builds. Public deployment still requires your hosting account/domain, OIDC provider credentials, TLS ingress, persistent-volume backups, and operational alert routing. Inventory recommendations need real lead-time/service-level inputs before they can be treated as reorder quantities; the provided risk flags are simulated.
+The codebase now includes repeatable ETL, chronological forecast validation, a time-defined churn classifier, optional MLflow tracking, PSI feature monitoring, Docker, Compose, and CI image builds. The app is publicly deployed on Streamlit Community Cloud, and the Compose/OIDC setup in "Production Deployment" is the recommended path for a secured production deployment, which still requires your hosting account/domain, OIDC provider credentials, TLS ingress, persistent-volume backups, and operational alert routing. Inventory recommendations need real lead-time/service-level inputs before they can be treated as reorder quantities; the provided risk flags are simulated.
