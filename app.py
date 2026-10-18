@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+
 import pandas as pd
 import duckdb
 import streamlit as st
+from pathlib import Path as _Path
 
 from retailpulse.analytics import (
     build_customer_rfm,
@@ -149,9 +151,13 @@ def render_demand_forecast(history: pd.DataFrame, source_key: str) -> None:
 st.sidebar.markdown("<div class='eyebrow'>Retail intelligence</div>", unsafe_allow_html=True)
 st.sidebar.title("RetailPulse")
 st.sidebar.caption("Customer analytics · demand · inventory")
+_SOURCE_OPTIONS = ["Online Retail II (primary)", "Upload one file"]
+if (_Path(__file__).parent / "data" / "raw" / "sales_transactions.csv").exists():
+    _SOURCE_OPTIONS.insert(1, "Relational RetailPulse bundle")
+
 data_source = st.sidebar.radio(
     "Data source",
-    ["Online Retail II (primary)", "Relational RetailPulse bundle", "Upload one file"],
+    _SOURCE_OPTIONS,
 )
 bundle = st.session_state.get("retail_bundle")
 if data_source == "Online Retail II (primary)":
