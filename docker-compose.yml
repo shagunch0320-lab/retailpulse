@@ -1,0 +1,43 @@
+services:
+  retailpulse:
+    build:
+      context: .
+    image: retailpulse:local
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    ports:
+      - "${RETAILPULSE_BIND_ADDRESS:-127.0.0.1}:${RETAILPULSE_PORT:-8501}:8501"
+    environment:
+      RETAILPULSE_TRANSACTION_PATH: ${RETAILPULSE_TRANSACTION_PATH:-/app/data/transactions/sales_transactions.csv}
+      RETAILPULSE_REFERENCE_DIR: /app/data/reference
+      RETAILPULSE_CACHE_DIR: /app/data/processed
+      RETAILPULSE_ONLINE_RETAIL_II_PATH: /app/data/online-retail/online_retail_II.xlsx
+      RETAILPULSE_REQUIRE_LOGIN: ${RETAILPULSE_REQUIRE_LOGIN:-true}
+      RETAILPULSE_ALLOWED_EMAILS: ${RETAILPULSE_ALLOWED_EMAILS:-}
+    volumes:
+      - ${RETAILPULSE_HOST_TRANSACTION_DIR:-./data/raw}:/app/data/transactions:ro
+      - ${RETAILPULSE_HOST_ONLINE_RETAIL_II_DIR:-./data/raw}:/app/data/online-retail:ro
+      - ./data/raw:/app/data/reference:ro
+      - retailpulse-cache:/app/data/processed
+      - ./.streamlit:/app/.streamlit:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 45s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+
+volumes:
+  retailpulse-cache:
